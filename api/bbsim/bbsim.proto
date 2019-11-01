@@ -56,6 +56,7 @@ message ONUs {
 
 message ONURequest {
     string SerialNumber = 1;
+    string SubActionVal = 2;
 }
 
 // Utils
@@ -89,4 +90,5 @@ service BBSim {
     rpc PoweronONU (ONURequest) returns (Response) {}
     rpc RestartEapol (ONURequest) returns (Response) {}
     rpc RestartDhcp (ONURequest) returns (Response) {}
+    rpc SendIgmpReq (ONURequest) returns (Response) {}
 }

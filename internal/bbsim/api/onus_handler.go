@@ -19,6 +19,7 @@ package api
 import (
 	"context"
 	"fmt"
+
 	"github.com/opencord/bbsim/api/bbsim"
 	"github.com/opencord/bbsim/internal/bbsim/devices"
 	log "github.com/sirupsen/logrus"
@@ -155,6 +156,36 @@ func (s BBSimServer) PoweronONU(ctx context.Context, req *bbsim.ONURequest) (*bb
 
 	res.StatusCode = int32(codes.OK)
 	res.Message = fmt.Sprintf("ONU %s successfully powered on.", onu.Sn())
+
+	return res, nil
+}
+
+func (s BBSimServer) SendIgmpReq(ctx context.Context, req *bbsim.ONURequest) (*bbsim.Response, error) {
+	res := &bbsim.Response{}
+
+	logger.WithFields(log.Fields{
+		"OnuSn":     req.SerialNumber,
+		"subAction": req.SubActionVal,
+	}).Infof("Received igmp request for ONU")
+
+	olt := devices.GetOLT()
+	onu, err := olt.FindOnuBySn(req.SerialNumber)
+
+	if err != nil {
+		res.StatusCode = int32(codes.NotFound)
+		res.Message = err.Error()
+		fmt.Println("ONU not found for sending igmp packet.")
+		return res, err
+	} else {
+		igmpErr := onu.SendIgmpPacket(req.SerialNumber, req.SubActionVal)
+
+		if igmpErr != nil {
+			res.StatusCode = int32(codes.FailedPrecondition)
+			res.Message = igmpErr.Error()
+			fmt.Println("igmp packet failed.")
+			return res, igmpErr
+		}
+	}
 
 	return res, nil
 }
